@@ -24,6 +24,7 @@ docker-compose up
 
 Initialisierung siehe [app.js](passport-server/app.js).
 
+Lokale Strategie, für die */login*-Route, hier werden User und Password mit der Datenbank verglichen
 
 ```javascript
 passport.use(new LocalStrategy(
@@ -45,6 +46,25 @@ passport.use(new LocalStrategy(
         });
     }));
 
+
+router.post('/login',
+    passport.authenticate('local', {session: false}),
+    function (req, res) {
+        console.log("login", req.user);
+
+        var payload = {id: req.user._id};
+        var token = jwt.sign(payload, jwtOptions.secretOrKey)
+        res.send({message: "ok", token: token})
+
+    });
+```
+
+JWT-Strategie für alle andere Routen
+
+
+```javascript
+
+
 var jwtOptions = {}
 
 
@@ -65,31 +85,11 @@ var strategy = new JwtStrategy(jwtOptions, function (jwt_payload, next) {
 
 passport.use(strategy);
 
-passport.serializeUser(function (user, done) {
-    done(null, user.id);
-});
-
-passport.deserializeUser(function (id, done) {
-    User.getUserById(id, function (err, user) {
-        done(err, user);
-    });
-});
-
-
 router.get('/user', passport.authenticate('jwt', {session: false}), function (req, res) {
     res.send(req.user);
 })
 
-router.post('/login',
-    passport.authenticate('local', {session: false}),
-    function (req, res) {
-        console.log("login", req.user);
 
-        var payload = {id: req.user._id};
-        var token = jwt.sign(payload, jwtOptions.secretOrKey)
-        res.send({message: "ok", token: token})
-
-    });
 
 ```
 
