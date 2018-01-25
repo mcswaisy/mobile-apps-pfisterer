@@ -102,7 +102,7 @@ router.get('/delete', passport.authenticate('jwt', {session: false}), function (
 
 
 // Register User
-router.post('/register', passport.authenticate('jwt', {session: false}), function (req, res) {
+router.post('/register', function (req, res) {
     var username = req.body.username;
     var password = req.body.password;
     var password2 = req.body.password2;
