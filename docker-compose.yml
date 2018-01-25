@@ -1,0 +1,16 @@
+version: '3'
+services:
+  backend:
+    build: passport-server
+    ports:
+      - "3000:3000"
+    environment:
+      - DB_HOST=mongo
+    command: >
+          sh -c "
+          echo 'waiting 5s';
+          sleep 5;
+          npm start
+          "
+  mongo:
+    image: "mongo:3.7.1"

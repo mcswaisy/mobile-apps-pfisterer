@@ -53,4 +53,7 @@ crashlytics-build.properties
 fabric.properties
 
 node_modules
-platforms
+plattforms
+cordova-app/node_modules
+passport-server/node_modules
+cordova-app/platforms
