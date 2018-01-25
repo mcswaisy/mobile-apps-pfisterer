@@ -10,6 +10,10 @@ var passport = require('passport');
 var LocalStrategy = require('passport-local').Strategy;
 var mongo = require('mongodb');
 var mongoose = require('mongoose');
+var cookie = require('cookie');
+var cookieSignature = require('cookie-signature')
+
+
 
 mongoose.connect(`mongodb://${process.env.DB_HOST || "localhost"}/loginapp`);
 var db = mongoose.connection;
@@ -24,19 +28,19 @@ var app = express();
 // BodyParser Middleware
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false}));
-app.use(cookieParser());
+// app.use(cookieParser());
 
+app.use(function(req, res, next) {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
 
-// Express Session
-app.use(session({
-    secret: 'secret',
-    saveUninitialized: true,
-    resave: true
-}));
+    next();
+})
+
 
 // Passport init
 app.use(passport.initialize());
-app.use(passport.session());
+// app.use(passport.session());
 
 // Express Validator
 app.use(expressValidator({

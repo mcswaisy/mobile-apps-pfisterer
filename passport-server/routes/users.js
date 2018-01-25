@@ -3,25 +3,71 @@ var router = express.Router();
 var passport = require('passport');
 var LocalStrategy = require('passport-local').Strategy;
 var bcrypt = require('bcryptjs');
+var jwt = require('jsonwebtoken');
+var passportJWT = require("passport-jwt");
+var ExtractJwt = passportJWT.ExtractJwt;
+var JwtStrategy = passportJWT.Strategy;
+
 
 var User = require('../models/user');
 
-function ensureAuthenticated(req, res, next) {
-    if (req.isAuthenticated()) {
-        return next();
-    } else {
-        //req.flash('error_msg','You are not logged in');
-        res.status(403)
-        res.send("Forbidden")
-    }
-}
 
-router.get('/user', ensureAuthenticated, function (req, res) {
+passport.use(new LocalStrategy(
+    function (username, password, done) {
+        User.getUserByUsername(username, function (err, user) {
+            if (err) throw err;
+            if (!user) {
+                return done(null, false, {message: 'Unknown User'});
+            }
+
+            User.comparePassword(password, user.password, function (err, isMatch) {
+                if (err) throw err;
+                if (isMatch) {
+                    return done(null, user);
+                } else {
+                    return done(null, false, {message: 'Invalid password'});
+                }
+            });
+        });
+    }));
+
+var jwtOptions = {}
+
+
+jwtOptions.jwtFromRequest = ExtractJwt.fromHeader("authorization");
+jwtOptions.secretOrKey = 'secret';
+
+var strategy = new JwtStrategy(jwtOptions, function (jwt_payload, next) {
+    console.log('payload received', jwt_payload);
+    // usually this would be a database call:
+    User.getUserById(jwt_payload.id, function(err, user) {
+        if (user) {
+            next(null, user);
+        } else {
+            next(null, false);
+        }
+    });
+});
+
+passport.use(strategy);
+
+passport.serializeUser(function (user, done) {
+    done(null, user.id);
+});
+
+passport.deserializeUser(function (id, done) {
+    User.getUserById(id, function (err, user) {
+        done(err, user);
+    });
+});
+
+
+router.get('/user', passport.authenticate('jwt', {session: false}), function (req, res) {
     res.send(req.user);
 })
 
 
-router.post('/user', ensureAuthenticated, function (req, res) {
+router.post('/user', passport.authenticate('jwt', {session: false}), function (req, res) {
     var user = req.body;
     delete user._id;
     delete user.username;
@@ -33,7 +79,7 @@ router.post('/user', ensureAuthenticated, function (req, res) {
     }
 
 
-    if (user.password){
+    if (user.password) {
         bcrypt.genSalt(10, function (err, salt) {
             bcrypt.hash(user.password, salt, function (err, hash) {
                 user.password = hash;
@@ -41,12 +87,13 @@ router.post('/user', ensureAuthenticated, function (req, res) {
             })
         })
     } else {
-        User.updateUser(req.user._id,user,c)
+        User.updateUser(req.user._id, user, c)
     }
 
 })
 
-router.get('/delete', ensureAuthenticated, function (req, res) {
+router.get('/delete', passport.authenticate('jwt', {session: false}), function (req, res) {
+
     User.deleteUser(req.user._id, (err, user) => {
         if (err) res.status(500)
         res.send(user);
@@ -55,7 +102,7 @@ router.get('/delete', ensureAuthenticated, function (req, res) {
 
 
 // Register User
-router.post('/register', function (req, res) {
+router.post('/register', passport.authenticate('jwt', {session: false}), function (req, res) {
     var username = req.body.username;
     var password = req.body.password;
     var password2 = req.body.password2;
@@ -78,7 +125,7 @@ router.post('/register', function (req, res) {
 
         User.createUser(newUser, function (err, user) {
             if (err) throw err;
-            console.log(user);
+            console.log("create user", user);
         });
 
 
@@ -86,49 +133,16 @@ router.post('/register', function (req, res) {
     }
 });
 
-passport.use(new LocalStrategy(
-    function (username, password, done) {
-        User.getUserByUsername(username, function (err, user) {
-            if (err) throw err;
-            if (!user) {
-                return done(null, false, {message: 'Unknown User'});
-            }
-
-            User.comparePassword(password, user.password, function (err, isMatch) {
-                if (err) throw err;
-                if (isMatch) {
-                    return done(null, user);
-                } else {
-                    return done(null, false, {message: 'Invalid password'});
-                }
-            });
-        });
-    }));
-
-passport.serializeUser(function (user, done) {
-    done(null, user.id);
-});
-
-passport.deserializeUser(function (id, done) {
-    User.getUserById(id, function (err, user) {
-        done(err, user);
-    });
-});
 
 router.post('/login',
-    passport.authenticate('local', {}),
+    passport.authenticate('local', {session: false}),
     function (req, res) {
-        console.log("login", req.body.username);
-        res.send("login")
+        console.log("login", req.user);
+
+        var payload = {id: req.user._id};
+        var token = jwt.sign(payload, jwtOptions.secretOrKey)
+        res.send({message: "ok", token: token})
+
     });
-
-router.get('/logout', function (req, res) {
-    var name = req.user.username;
-    req.logout();
-
-    console.log("logout", name)
-    res.send("logout")
-
-});
 
 module.exports = router;

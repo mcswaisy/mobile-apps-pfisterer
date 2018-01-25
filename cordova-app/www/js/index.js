@@ -16,9 +16,12 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
+var sessionId;
+
 var app = {
     // Application Constructor
-    initialize: function() {
+    initialize: function () {
         document.addEventListener('deviceready', this.onDeviceReady.bind(this), false);
     },
 
@@ -26,12 +29,72 @@ var app = {
     //
     // Bind any cordova events here. Common events are:
     // 'pause', 'resume', etc.
-    onDeviceReady: function() {
+    onDeviceReady: function () {
         this.receivedEvent('deviceready');
+        sessionId = localStorage.getItem('connect.sid');
+
+
+
+
+        $('#loginButton').click(function () {
+
+
+            $.ajax({
+                type: "POST",
+                url: "http://localhost:3000/login",
+                data: {username: "asdf", password: "asdf"},
+                success: function (data, textStatus, request) {
+                    console.log(data, textStatus, request)
+                    localStorage.setItem("connect.sid", data.token)
+                },
+                dataType: "json",
+                error: function (request, textStatus, errorThrown) {
+                    console.log(request, textStatus, errorThrown)
+                }
+            });
+        })
+
+        $('#registerButton').click(function () {
+
+
+            $.ajax({
+                type: "POST",
+                url: "http://localhost:3000/register",
+                data: {username: "asdf", password: "asdf", password2: "asdf"},
+                success: function (data) {
+                    console.log(data)
+                },
+                dataType: "json",
+                error: function (data) {
+                    //console.log(data)
+                }
+            });
+        })
+
+        $('#showButton').click(function () {
+
+
+            $.ajax({
+                type: "GET",
+                url: "http://localhost:3000/user",
+                // data: {username: "asdf", password: "asdf", password2: "asdf"},
+                success: function (data) {
+                    console.log(data)
+                },
+                dataType: "json",
+                error: function (data) {
+                    //console.log(data)
+                },
+                headers: {
+                    "Authorization": localStorage.getItem('connect.sid')
+                }
+            });
+        })
+
     },
 
     // Update DOM on a Received Event
-    receivedEvent: function(id) {
+    receivedEvent: function (id) {
         var parentElement = document.getElementById(id);
         var listeningElement = parentElement.querySelector('.listening');
         var receivedElement = parentElement.querySelector('.received');
@@ -44,3 +107,4 @@ var app = {
 };
 
 app.initialize();
+
