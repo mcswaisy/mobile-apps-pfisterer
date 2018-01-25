@@ -19,6 +19,7 @@
 
 var sessionId;
 
+
 var app = {
     // Application Constructor
     initialize: function () {
@@ -37,15 +38,18 @@ var app = {
 
 
         $('#loginButton').click(function () {
-
-
             $.ajax({
                 type: "POST",
-                url: "http://localhost:3000/login",
-                data: {username: "asdf", password: "asdf"},
+                url: `http://${$("#serverInput").val()}/login`,
+                data: {
+                    username: $("#usernameInput").val(),
+                    password: $("#passwordInput").val()},
                 success: function (data, textStatus, request) {
                     console.log(data, textStatus, request)
                     localStorage.setItem("connect.sid", data.token)
+                    if (data.token) {
+                        alert("success")
+                    }
                 },
                 dataType: "json",
                 error: function (request, textStatus, errorThrown) {
@@ -59,8 +63,11 @@ var app = {
 
             $.ajax({
                 type: "POST",
-                url: "http://localhost:3000/register",
-                data: {username: "asdf", password: "asdf", password2: "asdf"},
+                url: `http://${$("#serverInput").val()}/register`,
+                data: {
+                    username: $("#usernameInput").val(),
+                    password: $("#passwordInput").val(),
+                    password2: $("#passwordInput").val()},
                 success: function (data) {
                     console.log(data)
                 },
@@ -76,10 +83,10 @@ var app = {
 
             $.ajax({
                 type: "GET",
-                url: "http://localhost:3000/user",
+                url: `http://${$("#serverInput").val()}/user`,
                 // data: {username: "asdf", password: "asdf", password2: "asdf"},
                 success: function (data) {
-                    console.log(data)
+                    alert(JSON.stringify(data))
                 },
                 dataType: "json",
                 error: function (data) {
@@ -95,12 +102,12 @@ var app = {
 
     // Update DOM on a Received Event
     receivedEvent: function (id) {
-        var parentElement = document.getElementById(id);
-        var listeningElement = parentElement.querySelector('.listening');
-        var receivedElement = parentElement.querySelector('.received');
-
-        listeningElement.setAttribute('style', 'display:none;');
-        receivedElement.setAttribute('style', 'display:block;');
+        // var parentElement = document.getElementById(id);
+        // var listeningElement = parentElement.querySelector('.listening');
+        // var receivedElement = parentElement.querySelector('.received');
+        //
+        // listeningElement.setAttribute('style', 'display:none;');
+        // receivedElement.setAttribute('style', 'display:block;');
 
         console.log('Received Event: ' + id);
     }
